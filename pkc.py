@@ -3,7 +3,7 @@ import ipdb
 import threading
 from collections import Counter 
 import atomics
-
+import networkx as nx 
 
 def all_neighbors(G, v): 
     return np.argwhere(G[v, :] == 1).flatten().tolist()
@@ -27,13 +27,14 @@ def online_peel_decr(frontier, G, atomic_array, k):
 
 def online_peel(frontier, k, G, atomic_array, degrees, num_threads=3): 
     f_next = [] 
+    ipdb.set_trace() 
     mt = num_threads > 1 
     if len(frontier) > num_threads: 
         if mt: 
             thread_list = [] 
             data_chunk = np.array_split(list(frontier), num_threads-1)
             for i,t in enumerate(data_chunk):
-                m = threading.Thread(target=online_peel_decr, args=(frontier, G, atomic_array, k)) 
+                m = threading.Thread(target=online_peel_decr, args=(t, G, atomic_array, k)) 
                 thread_list.append(m)
             for m in thread_list:
                 m.start() 
@@ -70,16 +71,29 @@ def k_core_decomposition_pkc(G, peel_fnc, num_threads=1):
         k += 1           
     return coreness
 
-# adj  = np.array([
-#     [0, 1, 1, 0, 0, 0],
-#     [1, 0, 1, 1, 0, 0],
-#     [1, 1, 0, 0, 1, 0],
-#     [0, 1, 0, 0, 1, 1],
-#     [0, 0, 1, 1, 0, 1],
-#     [0, 0, 0, 1, 1, 0]
-# ])
-adj = np.load('/Users/rebeccasalganik/Documents/School/2025/Distributed/Data/Karate.npy').astype(int)
+adj = np.array([
+    [0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0],
+    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+    [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+    [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+])
+# adj = np.load('/Users/rebeccasalganik/Documents/School/2025/Distributed/Data/Karate.npy').astype(int)
 degree = np.sum(adj, axis=1)
 core_numbers = k_core_decomposition_pkc(adj, online_peel, 1)
 print(core_numbers)
+
+H = nx.from_numpy_array(adj) #nx.havel_hakimi_graph(degrees)
+solution = list(nx.core_number(H).values())
+print((core_numbers == solution).all()) 
 
