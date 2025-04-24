@@ -1,5 +1,6 @@
 import numpy as np 
 import ipdb 
+# import dgl 
 
 def all_neighbors(G, v): 
     return np.argwhere(G[v, :] == 1).flatten().tolist()
@@ -41,12 +42,21 @@ def generate_random_adj_matrix(n, edge_prob=0.5, directed=False):
 
 # adj = generate_random_adj_matrix(5)
 # print(adj)
-adj = np.array([[0, 0, 0, 0, 1],
- [0, 0, 0, 1, 0],
- [0, 0,  0,  1, 1],
- [0, 1, 1, 0, 0],
- [1, 0, 1, 0, 0]])
+# adj = np.array([[0, 0, 0, 0, 1],
+#  [0, 0, 0, 1, 0],
+#  [0, 0,  0,  1, 1],
+#  [0, 1, 1, 0, 0],
+#  [1, 0, 1, 0, 0]])
+
+# adj  = np.array([
+#     [0, 1, 1, 0, 0, 0],
+#     [1, 0, 1, 1, 0, 0],
+#     [1, 1, 0, 0, 1, 0],
+#     [0, 1, 0, 0, 1, 1],
+#     [0, 0, 1, 1, 0, 1],
+#     [0, 0, 0, 1, 1, 0]
+# ])
+adj = np.load('/Users/rebeccasalganik/Documents/School/2025/Distributed/Data/Karate.npy').astype(int)
 degree = np.sum(adj, axis=1)
-print(degree)
 core_numbers = k_core_decomposition(adj)
-print(core_numbers)
+print(core_numbers.values())
