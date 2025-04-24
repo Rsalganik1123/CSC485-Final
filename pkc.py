@@ -13,43 +13,35 @@ def atomic_dec(a: atomics.INTEGRAL):
     while not res:
         desired = res.expected - 1
         res = a.cmpxchg_weak(expected=res.expected, desired=desired)
-    return a.load() 
+    return desired #res #a.load() 
 
-def online_peel_decr(frontier, G, atomic_array, k):
-    f_next = [] 
+def online_peel_decr(frontier, G, atomic_array, k, f_next):
     for v in frontier: 
         for u in all_neighbors(G, v): 
             delta = atomic_dec(atomic_array[u]) 
-            if delta == k: 
-                f_next.append(u) 
+            if delta == k:
+                f_next.extend([u]) 
     return f_next 
 
 
 def online_peel(frontier, k, G, atomic_array, degrees, num_threads=3): 
-    f_next = [] 
-    ipdb.set_trace() 
-    mt = num_threads > 1 
-    if len(frontier) > num_threads: 
-        if mt: 
-            thread_list = [] 
-            data_chunk = np.array_split(list(frontier), num_threads-1)
-            for i,t in enumerate(data_chunk):
-                m = threading.Thread(target=online_peel_decr, args=(t, G, atomic_array, k)) 
-                thread_list.append(m)
-            for m in thread_list:
-                m.start() 
-            for m in thread_list:
-                m.join()
-        else: 
-            f_add = online_peel_decr(frontier, G, atomic_array, k)
-            f_next.extend(f_add)
+    f_next = []  
+    mt = num_threads > 1  
+    if mt: 
+        thread_list = [] 
+        data_chunk = np.array_split(list(frontier), num_threads)
+        for i,t in enumerate(data_chunk):
+            m = threading.Thread(target=online_peel_decr, args=(t, G, atomic_array, k, f_next)) 
+            thread_list.append(m)
+        for m in thread_list:
+            m.start() 
+        for m in thread_list:
+            m.join()
     else: 
-        f_add = online_peel_decr(frontier, G, atomic_array, k)
-        f_next.extend(f_add)
+        f_next = online_peel_decr(frontier, G, atomic_array, k, f_next)
     for i in range(len(degrees)): 
         degrees[i] = atomic_array[i].load() 
     return f_next, degrees
-
 
 def k_core_decomposition_pkc(G, peel_fnc, num_threads=1):
     degrees = np.sum(G, axis=1)
@@ -88,12 +80,13 @@ adj = np.array([
     [0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0],
     [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 ])
-# adj = np.load('/Users/rebeccasalganik/Documents/School/2025/Distributed/Data/Karate.npy').astype(int)
+adj = np.load('/Users/rebeccasalganik/Documents/School/2025/Distributed/Data/Karate.npy').astype(int)
 degree = np.sum(adj, axis=1)
 core_numbers = k_core_decomposition_pkc(adj, online_peel, 1)
 print(core_numbers)
 
 H = nx.from_numpy_array(adj) #nx.havel_hakimi_graph(degrees)
 solution = list(nx.core_number(H).values())
+print(solution)
 print((core_numbers == solution).all()) 
 

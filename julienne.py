@@ -75,7 +75,7 @@ def offline_peel_old2(frontier, k, G, degrees, processed, num_threads=1):
     return f_next, degrees
 
 
-def offline_peel_test(frontier, k, G, degrees, processed, num_threads=1):
+def offline_peel_test(frontier, k, G, degrees, processed, num_threads=3):
     # ipdb.set_trace() 
     # # Step 1: Gather all neighbors (with duplicates) 
     L = nbrs_all_gather(G, frontier)
@@ -109,7 +109,7 @@ def offline_peel_test(frontier, k, G, degrees, processed, num_threads=1):
     return f_next, degrees
 
 def k_core_decomposition_julienne(G, peel_fnc, num_threads=1):
-    ipdb.set_trace() 
+    # ipdb.set_trace() 
     degrees = np.sum(G, axis=1)
     coreness = np.zeros_like(degrees)
     processed = np.zeros_like(degrees, dtype=bool)
@@ -117,12 +117,7 @@ def k_core_decomposition_julienne(G, peel_fnc, num_threads=1):
     active_set = np.arange(G.shape[0])
     k = 0
     while active_set.size > 0:
-        # frontier = np.intersect1d(np.where(degrees == k)[0], active_set)
-        # frontier = np.array([v for v in active_set if degrees[v] == k]) 
         frontier = np.array([v for v in active_set if degrees[v] <= k])
-        print(f"k = {k}")
-        print(f'F: {frontier}')
-        print(f"D: {degrees}")
         while list(frontier):
             for v in frontier:
                 coreness[v] = k
@@ -135,33 +130,6 @@ def k_core_decomposition_julienne(G, peel_fnc, num_threads=1):
 
 print("JULIENNE")
 adj = np.load('/Users/rebeccasalganik/Documents/School/2025/Distributed/Data/Karate.npy').astype(int)
-# adj = np.array([
-#     [0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-#     [0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
-#     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
-#     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-#     [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-#     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0],
-#     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0],
-#     [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-#     [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-#     [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-#     [0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-#     [0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-#     [0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-#     [0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-#     [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-# ])
-# adj = np.array([
-#     [0, 1, 0, 1, 0, 0, 0, 0],
-#     [1, 0, 1, 1, 0, 0, 0, 0],
-#     [0, 1, 0, 0, 1, 0, 0, 0],
-#     [1, 1, 0, 0, 1, 0, 0, 0],
-#     [0, 0, 1, 1, 0, 1, 0, 0],
-#     [0, 0, 0, 0, 1, 0, 1, 1],
-#     [0, 0, 0, 0, 0, 1, 0, 1],
-#     [0, 0, 0, 0, 0, 1, 1, 0]
-# ])
 degree = np.sum(adj, axis=1)
 core_numbers = k_core_decomposition_julienne(adj, offline_peel, 2)
 print(core_numbers)

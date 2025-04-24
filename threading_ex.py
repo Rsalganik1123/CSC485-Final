@@ -29,7 +29,8 @@
 
 import atomics
 from ctypes import c_int
-
+import numpy as np 
+import threading
 
 def atomic_inc(a: atomics.INTEGRAL):
     res = atomics.CmpxchgResult(success=False, expected=a.load())
@@ -39,11 +40,59 @@ def atomic_inc(a: atomics.INTEGRAL):
     return a.load() 
 
 a = atomics.atomic(width=4, atype=atomics.INT)
-a.store(5)
+# a.store(5)
+# r = atomic_inc(a)
+# print(r)
 
 
-r = atomic_inc(a)
-print(r)
+# def inc(degrees): 
+#     degrees[2] = 55
+
+# def main(): 
+#     degrees = [1,2,3]
+#     inc(degrees)
+#     print(degrees)
+
+# main() 
+
+
+
+
+def atomic_dec(a: atomics.INTEGRAL):
+    res = atomics.CmpxchgResult(success=False, expected=a.load())
+    while not res.success:
+        desired = res.expected - 1
+        res = a.cmpxchg_weak(expected=res.expected, desired=desired) 
+    return desired
+
+def online_peel_decr(frontier, atomic_array):
+    f_next = [] 
+    for v in frontier: 
+        delta = atomic_dec(atomic_array[v]) 
+        print("D", delta) 
+    return f_next 
+
+
+def test():
+    a = atomics.atomic(width=4, atype=atomics.INT)
+    a.store(5)
+    r = atomic_inc(a)
+    atomic_array = [atomics.atomic(width=4, atype=atomics.INT) for d in [5,4,3]]
+    for j in range(len(atomic_array)):
+        atomic_array[j].store(5) 
+        print(atomic_array[j].load())
+    data_chunk = np.array_split([1,1,1], 3)
+    thread_list = [] 
+    for i,t in enumerate(data_chunk):
+        m = threading.Thread(target=online_peel_decr, args=(t, atomic_array)) 
+        thread_list.append(m)
+    for m in thread_list:
+        m.start() 
+    for m in thread_list:
+        m.join()
+    print("A", a.load())
+
+test() 
 
 # atomic_array = [atomics.atomic(width=4, atype=atomics.INT) for _ in range(10)]
 
