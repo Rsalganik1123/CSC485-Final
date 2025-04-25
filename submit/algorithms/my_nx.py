@@ -5,7 +5,7 @@ import ipdb
 def all_neighbors(G, v): 
     return np.argwhere(G[v, :] == 1).flatten().tolist()
 
-def k_core_decomposition_nx(G, k=None):
+def k_core_decomposition_nx(G, args):
     degree_counts = np.sum(G, axis=1).tolist() 
     degrees = dict(zip(list(range(G.shape[0])), degree_counts)) 
     # Sort nodes by degree.
@@ -31,32 +31,4 @@ def k_core_decomposition_nx(G, k=None):
                 nodes[bin_start], nodes[pos] = nodes[pos], nodes[bin_start]
                 bin_boundaries[core[u]] += 1
                 core[u] -= 1
-    return core 
-
-def generate_random_adj_matrix(n, edge_prob=0.5, directed=False):
-    # Generate upper triangle of random 0/1 values
-    upper_triangle = np.triu(np.random.rand(n, n) < edge_prob, k=1).astype(int)
-    adj_matrix = upper_triangle + upper_triangle.T
-
-    return adj_matrix
-
-# adj = generate_random_adj_matrix(5)
-# print(adj)
-# adj = np.array([[0, 0, 0, 0, 1],
-#  [0, 0, 0, 1, 0],
-#  [0, 0,  0,  1, 1],
-#  [0, 1, 1, 0, 0],
-#  [1, 0, 1, 0, 0]])
-
-# adj  = np.array([
-#     [0, 1, 1, 0, 0, 0],
-#     [1, 0, 1, 1, 0, 0],
-#     [1, 1, 0, 0, 1, 0],
-#     [0, 1, 0, 0, 1, 1],
-#     [0, 0, 1, 1, 0, 1],
-#     [0, 0, 0, 1, 1, 0]
-# ])
-adj = np.load('/Users/rebeccasalganik/Documents/School/2025/Distributed/Data/Karate.npy').astype(int)
-degree = np.sum(adj, axis=1)
-core_numbers = k_core_decomposition(adj)
-print(core_numbers.values())
+    return list(core.values()) 

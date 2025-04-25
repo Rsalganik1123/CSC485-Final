@@ -7,7 +7,6 @@ import networkx as nx
 def nbrs_for_v(G, v): 
     return np.argwhere(G[v, :] == 1).flatten().tolist()
 
-
 def nbrs_all_gather(G, frontier): 
     return np.argwhere(G[frontier, :] == 1)[:, 1].flatten().tolist()
 
@@ -19,7 +18,7 @@ def offline_peel_decr(H, idx, degrees, processed, k):
             degrees[u] = degrees[u] - f_u
                 
 
-def offline_peel(frontier, k, G, degrees, processed, num_threads=1):
+def offline_peel(frontier, k, G, degrees, processed, num_threads):
     # ipdb.set_trace() 
     # Step 1: Gather all neighbors (with duplicates) 
     L = nbrs_all_gather(G, frontier)
@@ -53,7 +52,7 @@ def offline_peel(frontier, k, G, degrees, processed, num_threads=1):
     f_next = np.array([u for u in set(L) if not processed[u] and degrees[u] <= k]) 
     return f_next, degrees
 
-def k_core_decomposition_julienne(G, peel_fnc, num_threads=1):
+def k_core_decomposition_julienne(G,args):
     # ipdb.set_trace() 
     degrees = np.sum(G, axis=1)
     coreness = np.zeros_like(degrees)
@@ -67,20 +66,8 @@ def k_core_decomposition_julienne(G, peel_fnc, num_threads=1):
             for v in frontier:
                 coreness[v] = k
                 processed[v] = True  # Don't revisit it
-            frontier, degrees = peel_fnc(frontier, k, G, degrees, processed)
+            frontier, degrees = offline_peel(frontier, k, G, degrees, processed, args.num_threads)
         active_set = np.intersect1d(np.where(~processed)[0], active_set)
         # active_set = np.intersect1d(np.argwhere(degrees > k), active_set)
         k += 1
-    return coreness
-
-print("JULIENNE")
-adj = np.load('/Users/rebeccasalganik/Documents/School/2025/Distributed/Data/Karate.npy').astype(int)
-degree = np.sum(adj, axis=1)
-core_numbers = k_core_decomposition_julienne(adj, offline_peel, 2)
-print(core_numbers)
-
-H = nx.from_numpy_array(adj) #nx.havel_hakimi_graph(degrees)
-solution = list(nx.core_number(H).values())
-print(solution)
-
-print((core_numbers == solution).all()) 
+    return coreness.tolist()
